@@ -1,0 +1,8 @@
+{
+  "name": "Flutogram",
+  "description": "A modern social media platform where content can be dynamically generated and suggested by Gemini. Users can create posts, like, comment, and explore AI-generated content.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
