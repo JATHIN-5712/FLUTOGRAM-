@@ -18,7 +18,8 @@ const io = new Server(server, {
 });
 
 const PORT = 3001;
-const JWT_SECRET = 'your-super-secret-key-that-should-be-in-an-env-file';
+const JWT_SECRET = 'eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.ANCf_8p1AE4ZQs7QuqGAyyfTEgYrKSjKWkhBk5cIn1_2QVr2jEjmM-1tu7EgnyOf_fAsvdFXva8Sv05iTGzETg
+  ';
 
 // --- IN-MEMORY DATABASE ---
 // In a real application, this would be a persistent database like MongoDB or PostgreSQL.
