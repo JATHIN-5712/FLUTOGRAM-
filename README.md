@@ -1,4 +1,3 @@
-
 # Flutogram - AI-Powered Social Platform
 
 Flutogram is a modern, responsive social media web application prototype. It features a familiar user interface and integrates the Google Gemini API to generate dynamic and creative content suggestions for users. The application is built with React, TypeScript, and Tailwind CSS for the frontend, and includes a full-featured backend server using Node.js, Express, and Socket.IO for real-time communication.
@@ -36,17 +35,18 @@ This project contains a full-featured backend server built with Node.js, Express
     cd backend
     ```
 2.  **Install the required dependencies**:
+    This command reads the new `package.json` file and installs all the necessary packages.
     ```bash
-    npm install express cors socket.io jsonwebtoken uuid
+    npm install
     ```
 
 ### **3. Run the Server**
 
 - From inside the `backend` directory, run the following command in your terminal:
   ```bash
-  node server.js
+  npm start
   ```
-- You should see the message: `🚀 Server running on http://localhost:3001`. The backend is now running and ready to accept connections from your frontend.
+- This command executes the `start` script defined in `package.json`. You should see the message: `🚀 Server running on http://localhost:3001`. The backend is now running and ready to accept connections from your frontend.
 
 ### Troubleshooting
 
