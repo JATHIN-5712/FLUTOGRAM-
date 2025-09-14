@@ -1,0 +1,7 @@
+# For Google Gemini API (Frontend)
+# Get this from Google AI Studio: https://aistudio.google.com/app/apikey
+API_KEY=AIzaSyBXhIpokcfVquvRdGhW3R7pzqpa_xa0jU8
+
+# For Backend JWT Authentication (Recommended for better security)
+# Use a long, random, and secure string. You can generate one online.
+JWT_SECRET=eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.ANCf_8p1AE4ZQs7QuqGAyyfTEgYrKSjKWkhBk5cIn1_2QVr2jEjmM-1tu7EgnyOf_fAsvdFXva8Sv05iTGzETg
