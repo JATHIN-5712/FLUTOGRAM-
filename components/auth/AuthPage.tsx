@@ -35,18 +35,12 @@ const BackendOfflineWarning: React.FC = () => (
     <div className="bg-red-900/50 border border-red-500 text-red-300 p-4 rounded-lg mb-6 text-left">
         <h3 className="font-bold text-lg mb-2 text-center">Backend Connection Error</h3>
         <p className="text-sm">
-            Could not connect to the backend server at <strong>http://localhost:3001</strong>.
+            Could not connect to the deployed backend server.
         </p>
         <ul className="list-disc list-inside text-sm mt-2 space-y-1">
-            <li>Please make sure you have started the Node.js server from the <code>README.md</code> file.</li>
-            <li>
-                You can test the connection by visiting{' '}
-                <a href="http://localhost:3001/api/health" target="_blank" rel="noopener noreferrer" className="text-blue-400 underline">
-                    http://localhost:3001/api/health
-                </a>{' '}
-                in your browser.
-            </li>
-            <li>Check the troubleshooting guide in the <code>README.md</code> for more help.</li>
+            <li>Please make sure your backend is running correctly on your hosting provider (e.g., Render).</li>
+            <li>Check the deployment logs for any errors.</li>
+            <li>Ensure the URLs in `services/api.ts` and `services/socketService.ts` match your deployed backend URL exactly.</li>
         </ul>
     </div>
 );

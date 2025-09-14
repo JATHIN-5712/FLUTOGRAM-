@@ -10,7 +10,7 @@ import { NotificationsPage } from './components/notifications/NotificationsPage.
 import { Profile } from './components/profile/Profile.tsx';
 import { RightSidebar } from './components/layout/RightSidebar.tsx';
 import { StoryViewer } from './components/stories/StoryViewer.tsx';
-import type { User, Post, Conversation, GroupChatMessage, Notification } from './types.ts';
+import type { User, Post, Conversation, GroupChatMessage, Notification, Comment } from './types.ts';
 import { USERS, INITIAL_CONVERSATIONS } from './constants.tsx';
 import { api } from './services/api.ts';
 import { socketService } from './services/socketService.ts';
@@ -100,11 +100,12 @@ const App: React.FC = () => {
             socketService.onNewPost((newPost) => {
                  setPosts(prev => [newPost, ...prev.filter(p => p.id !== newPost.id)]);
             });
+            socketService.onPostUpdated((updatedPost) => {
+                setPosts(prevPosts => prevPosts.map(p => p.id === updatedPost.id ? updatedPost : p));
+            });
             socketService.onGroupMessageReceived((newMessage) => {
                 setGroupMessages(prev => [...prev, newMessage]);
             });
-            // Add listener for post updates (likes, comments)
-            // This would require a change in socketService and server, so we'll rely on optimistic updates for now
         }
     }, [currentUser]);
 
@@ -134,13 +135,13 @@ const App: React.FC = () => {
         }
     };
     
-    // In a real app, these handlers would call the API.
-    // Since the API methods are not fully implemented in the provided api.ts,
-    // we will rely on optimistic updates for now. The backend logic is added to server.js
-    const handleLikeToggle = (postId: string) => {
+    const handleLikeToggle = async (postId: string) => {
+        if (!currentUser) return;
+
+        const originalPosts = [...posts];
         // Optimistic update
-        setPosts(posts.map(p => {
-            if (p.id === postId && currentUser) {
+        const updatedPosts = posts.map(p => {
+            if (p.id === postId) {
                 const isLiked = p.likes.users.includes(currentUser.id);
                 return {
                     ...p,
@@ -151,20 +152,45 @@ const App: React.FC = () => {
                 };
             }
             return p;
-        }));
-        // api.toggleLike(postId).catch(() => /* revert */);
+        });
+        setPosts(updatedPosts);
+
+        try {
+            // The server will broadcast the 'post_updated' event, which will provide the source of truth.
+            await api.toggleLike(postId);
+        } catch (error) {
+            console.error("Failed to toggle like:", error);
+            setPosts(originalPosts); // Revert on error
+        }
     };
 
-    const handleComment = (postId: string, text: string) => {
+    const handleComment = async (postId: string, text: string) => {
          if (!currentUser) return;
-        const comment = { id: `temp-${Date.now()}`, text, user: currentUser, timestamp: new Date().toISOString() };
-        setPosts(posts.map(p => p.id === postId ? { ...p, comments: [...p.comments, comment] } : p));
-        // api.addComment(postId, text).catch(() => /* revert */);
+
+        const originalPosts = [...posts];
+        const tempComment: Comment = { id: `temp-${Date.now()}`, text, user: currentUser, timestamp: new Date().toISOString() };
+        
+        // Optimistic update
+        const updatedPosts = posts.map(p => p.id === postId ? { ...p, comments: [...p.comments, tempComment] } : p);
+        setPosts(updatedPosts);
+
+        try {
+            // The server will broadcast 'post_updated' with the real comment.
+            await api.addComment(postId, text);
+        } catch (error) {
+            console.error("Failed to add comment:", error);
+            setPosts(originalPosts); // Revert on error
+        }
     };
 
-    const handleSharePost = (postId: string) => {
-        console.log(`Sharing post ${postId}`);
-        // api.sharePost(postId).catch(() => /* revert */);
+    const handleSharePost = async (postId: string) => {
+        try {
+            // No optimistic update needed. The server broadcasts 'new_post' for the shared post
+            // and 'post_updated' for the original post's share count.
+            await api.sharePost(postId);
+        } catch (error) {
+            console.error("Failed to share post:", error);
+        }
     };
 
     const handleNavigate = (view: string) => {

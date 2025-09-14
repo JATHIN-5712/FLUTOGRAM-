@@ -17,7 +17,8 @@ const io = new Server(server, {
   }
 });
 
-const PORT = 3001;
+// FIX: Use the PORT from environment variables for deployment, fallback to 3001 for local.
+const PORT = process.env.PORT || 3001;
 const JWT_SECRET = 'your-super-secret-key-that-should-be-in-an-env-file';
 
 // --- IN-MEMORY DATABASE ---

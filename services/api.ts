@@ -1,6 +1,7 @@
 import type { Post, User, GroupChatMessage } from '../types.ts';
 
-const BASE_URL = 'http://localhost:3001/api';
+// IMPORTANT: Replace this with your actual Render backend URL
+const BASE_URL = 'https://your-backend-url.onrender.com/api';
 
 let token: string | null = localStorage.getItem('token');
 
@@ -38,7 +39,8 @@ export const api = {
     
     healthCheck: async (): Promise<boolean> => {
         try {
-            const response = await fetch('http://localhost:3001/api/health');
+            // IMPORTANT: The health check URL also needs to be updated
+            const response = await fetch('https://your-backend-url.onrender.com/api/health');
             return response.ok;
         } catch (error) {
             return false;
@@ -75,6 +77,25 @@ export const api = {
         });
     },
     
+    toggleLike: async (postId: string): Promise<Post> => {
+        return request<Post>(`/posts/${postId}/like`, {
+            method: 'POST',
+        });
+    },
+
+    addComment: async (postId: string, text: string): Promise<Post> => {
+        return request<Post>(`/posts/${postId}/comment`, {
+            method: 'POST',
+            body: JSON.stringify({ text }),
+        });
+    },
+
+    sharePost: async (postId: string): Promise<Post> => {
+         return request<Post>(`/posts/${postId}/share`, {
+            method: 'POST',
+        });
+    },
+
     getExplorePosts: async (): Promise<Post[]> => {
         return request<Post[]>('/posts/explore');
     },

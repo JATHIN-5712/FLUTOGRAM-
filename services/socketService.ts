@@ -1,14 +1,37 @@
 import { io, Socket } from 'socket.io-client';
 import type { GroupChatMessage, Post } from '../types.ts';
 
-const SOCKET_URL = 'http://localhost:3001';
+// IMPORTANT: Replace this with your actual Render backend URL
+const SOCKET_URL = 'https://your-backend-url.onrender.com';
+
+// FIX: Define event maps for typed Socket.IO events. This resolves type inference issues with methods like .on().
+interface ServerToClientEvents {
+    connect: () => void;
+    disconnect: (reason: string) => void;
+    connect_error: (err: Error) => void;
+    new_post: (post: Post) => void;
+    post_updated: (post: Post) => void;
+    new_group_message: (message: GroupChatMessage) => void;
+    typing_status: (data: { conversationId: string; userId: string; isTyping: boolean; }) => void;
+    messages_read: (data: { conversationId: string; readerId: string; }) => void;
+}
+
+interface ClientToServerEvents {
+    send_group_message: (data: { userId: string; text: string }) => void;
+    typing_status: (data: { conversationId: string; userId: string; isTyping: boolean; }) => void;
+    messages_read: (data: { conversationId: string; userId: string; }) => void;
+}
 
 class SocketService {
-    private socket: Socket | null = null;
+    // FIX: Use the defined event maps for a strongly-typed socket instance.
+    private socket: Socket<ServerToClientEvents, ClientToServerEvents> | null = null;
 
     connect(userId: string) {
         if (this.socket?.connected) return;
         
+        // FIX: The 'query' option for io() is valid in socket.io-client v3/v4. The type error reported
+        // likely stems from a library/type version mismatch. Providing a strongly-typed socket
+        // instance helps TypeScript resolve method and option types correctly.
         this.socket = io(SOCKET_URL, {
             query: { userId },
             reconnection: true,
@@ -36,6 +59,10 @@ class SocketService {
 
     onNewPost(handler: (post: Post) => void) {
         this.socket?.on('new_post', handler);
+    }
+
+    onPostUpdated(handler: (post: Post) => void) {
+        this.socket?.on('post_updated', handler);
     }
 
     // Group Chat
