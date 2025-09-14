@@ -2,7 +2,7 @@ import { io, Socket } from 'socket.io-client';
 import type { GroupChatMessage, Post } from '../types.ts';
 
 // IMPORTANT: Replace this with your actual Render backend URL
-const SOCKET_URL = 'https://flutogram-5.onrender.com';
+const SOCKET_URL = 'https://your-backend-url.onrender.com';
 
 // FIX: Define event maps for typed Socket.IO events. This resolves type inference issues with methods like .on().
 interface ServerToClientEvents {

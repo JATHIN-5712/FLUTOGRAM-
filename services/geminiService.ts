@@ -2,11 +2,13 @@ import { GoogleGenAI, Type } from "@google/genai";
 // FIX: Added .ts extension to import path
 import type { Post } from '../types.ts';
 
-if (!process.env.API_KEY) {
-  throw new Error("API_KEY environment variable is not set");
+// Initialize ai client only if API_KEY is available.
+let ai: GoogleGenAI | null = null;
+if (process.env.API_KEY) {
+  ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+} else {
+  console.error("API_KEY environment variable is not set. Gemini-related features will be disabled.");
 }
-
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 const postSchema = {
     type: Type.OBJECT,
@@ -30,6 +32,10 @@ const responseSchema = {
 
 
 export const generateSuggestedPosts = async (): Promise<Partial<Post>[]> => {
+  if (!ai) {
+    console.error("Cannot generate posts because Gemini API key is missing.");
+    return [];
+  }
   try {
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",

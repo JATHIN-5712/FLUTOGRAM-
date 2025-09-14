@@ -32,6 +32,8 @@ const PostGridItem: React.FC<{ post: Post }> = ({ post }) => (
 export const ExploreContent: React.FC<ExploreContentProps> = ({ onAddPosts }) => {
   const [explorePosts, setExplorePosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [generationError, setGenerationError] = useState<string | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
     const fetchExplorePosts = async () => {
@@ -49,8 +51,15 @@ export const ExploreContent: React.FC<ExploreContentProps> = ({ onAddPosts }) =>
   }, []);
   
   const handleGenerateAndAdd = async () => {
+    setGenerationError(null);
+    setIsGenerating(true);
     const geminiPosts = await generateSuggestedPosts();
-    onAddPosts(geminiPosts as Post[]);
+    if (geminiPosts.length > 0) {
+        onAddPosts(geminiPosts as Post[]);
+    } else {
+        setGenerationError("Could not generate posts. Please ensure the Gemini API key is configured in your deployment environment and try again.");
+    }
+    setIsGenerating(false);
   }
 
   return (
@@ -67,11 +76,12 @@ export const ExploreContent: React.FC<ExploreContentProps> = ({ onAddPosts }) =>
             <p className="text-blue-200/80 mb-4 text-sm">Let Gemini create interesting posts for you to explore.</p>
             <button
                 onClick={handleGenerateAndAdd}
-                disabled={isLoading}
+                disabled={isLoading || isGenerating}
                 className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center mx-auto"
             >
-              Generate & Add to Feed
+              {isGenerating ? 'Generating...' : 'Generate & Add to Feed'}
             </button>
+            {generationError && <p className="text-red-400 text-sm mt-4">{generationError}</p>}
         </div>
         
         {isLoading ? (
