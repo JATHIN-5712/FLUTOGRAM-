@@ -220,6 +220,43 @@ app.get('/api/auth/me', authMiddleware, (req, res) => {
 });
 
 // POSTS
+app.get('/api/posts/feed', authMiddleware, (req, res) => {
+    const feedPosts = Object.values(posts)
+        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+        .map(enrichPost);
+    res.json(feedPosts);
+});
+
+app.post('/api/posts', authMiddleware, (req, res) => {
+    const { content, imageUrl, videoUrl } = req.body;
+    const userId = req.user.id;
+    
+    if (!content && !imageUrl && !videoUrl) {
+        return res.status(400).json({ message: 'Post cannot be empty.' });
+    }
+
+    const newPost = {
+        id: `post-${uuidv4()}`,
+        userId,
+        content,
+        imageUrl,
+        videoUrl,
+        timestamp: new Date().toISOString(),
+        likes: { count: 0, users: [] },
+        comments: [],
+        shareCount: 0,
+    };
+
+    posts[newPost.id] = newPost;
+
+    const enrichedNewPost = enrichPost(newPost);
+    
+    // Broadcast the new post to all connected clients
+    io.emit('new_post', enrichedNewPost);
+    
+    res.status(201).json(enrichedNewPost);
+});
+
 app.get('/api/posts/explore', (req, res) => {
     const explorePosts = Object.values(posts)
         .filter(p => p.imageUrl || p.videoUrl)

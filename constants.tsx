@@ -60,39 +60,6 @@ const testuser: User = {
 
 export const USERS: User[] = [alex, brian, casey, diana, testuser];
 
-export const INITIAL_POSTS: Post[] = [
-    {
-        id: 'post1',
-        user: alex,
-        content: 'Just enjoying the beautiful sunset! #nofilter',
-        imageUrl: 'https://picsum.photos/seed/picsum/600/400',
-        timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-        likes: { count: 12, users: ['brian'] },
-        comments: [
-            { id: 'c1', user: brian, text: 'Wow, amazing shot!', timestamp: new Date().toISOString() }
-        ],
-        shareCount: 2,
-    },
-    {
-        id: 'post2',
-        user: brian,
-        content: 'Check out this cool video I made!',
-        videoUrl: 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString(),
-        likes: { count: 5, users: [] },
-        comments: [],
-        shareCount: 1,
-    },
-    {
-        id: 'post3',
-        user: casey,
-        content: 'My new blog post is live! Link in bio.',
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
-        likes: { count: 25, users: ['alex', 'brian'] },
-        comments: [],
-    }
-];
-
 export const INITIAL_CONVERSATIONS: Conversation[] = [
     {
         id: 'convo1',

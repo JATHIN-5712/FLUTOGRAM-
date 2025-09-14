@@ -11,7 +11,7 @@ import { Profile } from './components/profile/Profile.tsx';
 import { RightSidebar } from './components/layout/RightSidebar.tsx';
 import { StoryViewer } from './components/stories/StoryViewer.tsx';
 import type { User, Post, Conversation, GroupChatMessage } from './types.ts';
-import { USERS, INITIAL_POSTS, INITIAL_CONVERSATIONS } from './constants.tsx';
+import { USERS, INITIAL_CONVERSATIONS } from './constants.tsx';
 import { api } from './services/api.ts';
 import { socketService } from './services/socketService.ts';
 import { SpinnerIcon } from './components/common/Icons.tsx';
@@ -20,10 +20,11 @@ const App: React.FC = () => {
     const [token, setToken] = useState(localStorage.getItem('token'));
     const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [isLoadingApp, setIsLoadingApp] = useState(true);
+    const [isLoadingPosts, setIsLoadingPosts] = useState(true);
 
     // Mock data state
     const [users, setUsers] = useState<User[]>(USERS);
-    const [posts, setPosts] = useState<Post[]>(INITIAL_POSTS);
+    const [posts, setPosts] = useState<Post[]>([]);
     const [conversations, setConversations] = useState<Conversation[]>(INITIAL_CONVERSATIONS);
     const [onlineUserIds, setOnlineUserIds] = useState<string[]>(['alex', 'brian']);
 
@@ -52,6 +53,23 @@ const App: React.FC = () => {
     }, [token]);
 
     useEffect(() => {
+        const fetchPosts = async () => {
+            if (currentUser) {
+                try {
+                    setIsLoadingPosts(true);
+                    const feedPosts = await api.getFeedPosts();
+                    setPosts(feedPosts);
+                } catch (error) {
+                    console.error("Failed to fetch posts:", error);
+                } finally {
+                    setIsLoadingPosts(false);
+                }
+            }
+        };
+        fetchPosts();
+    }, [currentUser]);
+
+    useEffect(() => {
         if (currentUser) {
             // Fetch initial group messages
             api.getGroupChatMessages()
@@ -61,6 +79,12 @@ const App: React.FC = () => {
             // Listen for new messages
             socketService.onGroupMessageReceived((newMessage) => {
                 setGroupMessages(prev => [...prev, newMessage]);
+            });
+
+            // Listen for new posts from anyone
+            socketService.onNewPost((newPost) => {
+                // Add the new post to the top of the feed in real-time
+                setPosts(prev => [newPost, ...prev]);
             });
         }
     }, [currentUser]);
@@ -122,18 +146,15 @@ const App: React.FC = () => {
     
     const handleCreatePost = async (content: string, imageUrl?: string, videoUrl?: string) => {
         if (!currentUser) return;
-        const newPost: Post = {
-            id: `post-${Date.now()}`,
-            user: currentUser,
-            content,
-            imageUrl,
-            videoUrl,
-            timestamp: new Date().toISOString(),
-            likes: { count: 0, users: [] },
-            comments: [],
-            shareCount: 0,
-        };
-        setPosts(prev => [newPost, ...prev]);
+        try {
+            // The post is sent to the backend. The backend will then broadcast it
+            // via sockets to all clients (including this one), where it will be
+            // added to the state via the `onNewPost` listener.
+            await api.createPost(content, imageUrl, videoUrl);
+        } catch (error) {
+            console.error("Failed to create post:", error);
+            // Optionally show an error to the user
+        }
     };
     
     const handleSendGroupMessage = (text: string) => {
@@ -158,7 +179,7 @@ const App: React.FC = () => {
                     onViewProfile={handleViewProfile}
                     onViewStory={setViewingStory}
                     onCreateStory={async (imageUrl) => console.log('Create story', imageUrl)}
-                    isLoading={false}
+                    isLoading={isLoadingPosts}
                  />;
             case 'explore':
                 return <ExploreContent onAddPosts={(newPosts) => setPosts(p => [...newPosts, ...p])} />;

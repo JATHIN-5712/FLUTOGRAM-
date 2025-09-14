@@ -63,6 +63,17 @@ export const api = {
         if (!token) throw new Error("No token available for authentication.");
         return request<User>('/auth/me');
     },
+
+    getFeedPosts: async (): Promise<Post[]> => {
+        return request<Post[]>('/posts/feed');
+    },
+
+    createPost: async (content: string, imageUrl?: string, videoUrl?: string): Promise<Post> => {
+        return request<Post>('/posts', {
+            method: 'POST',
+            body: JSON.stringify({ content, imageUrl, videoUrl }),
+        });
+    },
     
     getExplorePosts: async (): Promise<Post[]> => {
         return request<Post[]>('/posts/explore');

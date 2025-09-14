@@ -1,5 +1,5 @@
 import { io, Socket } from 'socket.io-client';
-import type { GroupChatMessage } from '../types.ts';
+import type { GroupChatMessage, Post } from '../types.ts';
 
 const SOCKET_URL = 'http://localhost:3001';
 
@@ -32,6 +32,10 @@ class SocketService {
     disconnect() {
         this.socket?.disconnect();
         this.socket = null;
+    }
+
+    onNewPost(handler: (post: Post) => void) {
+        this.socket?.on('new_post', handler);
     }
 
     // Group Chat
