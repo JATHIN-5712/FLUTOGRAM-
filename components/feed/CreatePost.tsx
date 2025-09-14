@@ -3,7 +3,7 @@ import React, { useState, useRef } from 'react';
 import type { User } from '../../types.ts';
 // FIX: Added .tsx extension to import path
 import { PhotoIcon, VideoIcon, SpinnerIcon } from '../common/Icons.tsx';
-import { VideoRecorder } from './VideoRecorder';
+import { VideoRecorder } from '../chat/VideoRecorder.tsx';
 
 interface CreatePostProps {
   currentUser: User;

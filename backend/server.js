@@ -97,6 +97,7 @@ const initializeData = () => {
                 { id: 'c1', userId: 'brian', text: 'Wow, amazing shot!', timestamp: new Date().toISOString() }
             ],
             shareCount: 2,
+            originalPostId: null,
         },
         'post2': {
             id: 'post2',
@@ -107,6 +108,7 @@ const initializeData = () => {
             likes: { count: 0, users: [] },
             comments: [],
             shareCount: 1,
+            originalPostId: null,
         },
         'post3': {
             id: 'post3',
@@ -115,6 +117,7 @@ const initializeData = () => {
             timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
             likes: { count: 2, users: ['alex', 'brian'] },
             comments: [],
+            originalPostId: null,
         }
     };
 
@@ -146,11 +149,28 @@ function getUserObject(userId) {
     return userSafe;
 };
 
-const enrichPost = (post) => ({
-    ...post,
-    user: getUserObject(post.userId),
-    comments: post.comments.map(c => ({...c, user: getUserObject(c.userId)}))
-});
+// FIX: Updated enrichPost to handle originalPostId for shared posts.
+const enrichPost = (post) => {
+    if (!post) return null;
+    const enriched = {
+        ...post,
+        user: getUserObject(post.userId),
+        comments: post.comments.map(c => ({...c, user: getUserObject(c.userId)})),
+    };
+
+    if (post.originalPostId) {
+        const originalPost = posts[post.originalPostId];
+        // To avoid circular dependencies, we enrich the original post without its own originalPost property.
+        enriched.originalPost = originalPost ? {
+            ...originalPost,
+            user: getUserObject(originalPost.userId),
+            comments: originalPost.comments.map(c => ({...c, user: getUserObject(c.userId)}))
+        } : null;
+    }
+    
+    return enriched;
+};
+
 
 const enrichNotification = (notification) => ({
     ...notification,
@@ -245,6 +265,7 @@ app.post('/api/posts', authMiddleware, (req, res) => {
         likes: { count: 0, users: [] },
         comments: [],
         shareCount: 0,
+        originalPostId: null,
     };
 
     posts[newPost.id] = newPost;
@@ -256,6 +277,89 @@ app.post('/api/posts', authMiddleware, (req, res) => {
     
     res.status(201).json(enrichedNewPost);
 });
+
+// FIX: Added endpoint for liking/unliking a post.
+app.post('/api/posts/:postId/like', authMiddleware, (req, res) => {
+    const { postId } = req.params;
+    const userId = req.user.id;
+    const post = posts[postId];
+
+    if (!post) return res.status(404).json({ message: 'Post not found.' });
+
+    const userIndex = post.likes.users.indexOf(userId);
+    if (userIndex > -1) {
+        // User has already liked the post, so unlike it
+        post.likes.users.splice(userIndex, 1);
+        post.likes.count--;
+    } else {
+        // User has not liked the post, so like it
+        post.likes.users.push(userId);
+        post.likes.count++;
+    }
+    
+    const updatedPost = enrichPost(post);
+    io.emit('post_updated', updatedPost); // Broadcast the change
+    res.status(200).json(updatedPost);
+});
+
+// FIX: Added endpoint for commenting on a post.
+app.post('/api/posts/:postId/comment', authMiddleware, (req, res) => {
+    const { postId } = req.params;
+    const { text } = req.body;
+    const userId = req.user.id;
+    const post = posts[postId];
+
+    if (!post) return res.status(404).json({ message: 'Post not found.' });
+    if (!text) return res.status(400).json({ message: 'Comment text cannot be empty.' });
+
+    const newComment = {
+        id: `c-${uuidv4()}`,
+        userId,
+        text,
+        timestamp: new Date().toISOString(),
+    };
+    post.comments.push(newComment);
+
+    const updatedPost = enrichPost(post);
+    io.emit('post_updated', updatedPost); // Broadcast the change
+    res.status(201).json(updatedPost);
+});
+
+// FIX: Added endpoint for sharing a post.
+app.post('/api/posts/:postId/share', authMiddleware, (req, res) => {
+    const { postId } = req.params;
+    const userId = req.user.id;
+    const originalPost = posts[postId];
+
+    if (!originalPost) return res.status(404).json({ message: 'Original post not found.' });
+
+    // Prevent sharing a share
+    if (originalPost.originalPostId) {
+        return res.status(400).json({ message: 'Cannot share a post that is already a share.' });
+    }
+
+    originalPost.shareCount = (originalPost.shareCount || 0) + 1;
+
+    const newSharedPost = {
+        id: `post-${uuidv4()}`,
+        userId,
+        content: '', // Shared posts can have their own content, but we'll leave it empty for simplicity
+        timestamp: new Date().toISOString(),
+        likes: { count: 0, users: [] },
+        comments: [],
+        shareCount: 0,
+        originalPostId: postId,
+    };
+    posts[newSharedPost.id] = newSharedPost;
+
+    // Emit the original post update (for share count) and the new shared post
+    io.emit('post_updated', enrichPost(originalPost));
+    const enrichedNewPost = enrichPost(newSharedPost);
+    io.emit('new_post', enrichedNewPost);
+
+    res.status(201).json(enrichedNewPost);
+});
+
 
 app.get('/api/posts/explore', (req, res) => {
     const explorePosts = Object.values(posts)
