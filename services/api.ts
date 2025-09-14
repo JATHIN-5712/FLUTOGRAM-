@@ -1,7 +1,7 @@
 import type { Post, User, GroupChatMessage } from '../types.ts';
 
 // IMPORTANT: Replace this with your actual Render backend URL
-const BASE_URL = 'https://your-backend-url.onrender.com/api';
+const BASE_URL = 'https://flutogram-5.onrender.com/api';
 
 let token: string | null = localStorage.getItem('token');
 
